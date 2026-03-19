@@ -4,12 +4,17 @@ import dns from "node:dns";
 import userRouter from "./routes/userRouter.js";
 import jwt from "jsonwebtoken"
 import productRouter from "./routes/productRouter.js";
+import cors from "cors"
+import dotenv from "dotenv"
+
+dotenv.config()
 
 dns.setServers(["1.1.1.1", "8.8.8.8"]);
 
 const app = express();
 
 app.use(express.json());
+app.use(cors()) 
 
 // middleware start
 app.use(
@@ -18,7 +23,7 @@ app.use(
         if(token != null){
             token = token.replace("Bearer ","")
             
-            jwt.verify(token,"jwt-secret",(err , decoded)=>{
+            jwt.verify(token,process.env.JWT_SECRET,(err , decoded)=>{
                  if(decoded == null){
                     res.json({
                         message : "invalied token. plz login again"
@@ -35,7 +40,7 @@ app.use(
 )
 // end of the middleware
 
-const cstring = "mongodb+srv://admin:admin@cluster0.gmcoloe.mongodb.net/?appName=Cluster0"
+const cstring = process.env.MONGO_URI
 mongoose.connect(cstring)
     .then(() => {
         console.log("database connected successfully");

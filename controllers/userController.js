@@ -2,6 +2,7 @@ import User from "../models/user.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
+
 export function createUser(req,res){
  
     const hashPassword = bcrypt.hashSync(req.body.password,10)
@@ -51,7 +52,7 @@ export function loginUser(req,res){
                             isEmailVerified :user.isEmailVerified
 
                         },
-                        "jwt-secret"
+                        process.env.JWT_SECRET
 
                     )
 
@@ -84,3 +85,4 @@ export function isAdmin(req){
 
     return true
 }
+

@@ -130,3 +130,4 @@ export async function getProductbyid(req,res){
         })
     }
 }
+
