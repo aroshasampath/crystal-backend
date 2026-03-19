@@ -59,7 +59,14 @@ export function loginUser(req,res){
                     res.status(200).json(
                         {
                             message : "login successfull",
-                            token:token
+                            token:token,
+                            user :{
+                                email           : user.email,
+                                fristName       :user.fristName,
+                                lastName        :user.lastName,
+                                role            :user.role,
+                                isEmailVerified :user.isEmailVerified   
+                            }
                            
                         }
                     )
