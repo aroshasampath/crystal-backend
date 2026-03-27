@@ -1,5 +1,6 @@
 import Order from "../models/order.js";
 import Product from "../models/product.js";
+import { isAdmin } from "./userController.js";
 
 export async function createOrder(req, res) {
     if (req.user == null) {
@@ -115,4 +116,50 @@ export async function createOrder(req, res) {
             error: err.message
         });
     }
+}
+
+export async function getOrders(req,res){
+    if(isAdmin(res)){
+        const orders = await Order.find().sort({date:-1})
+        res.json(orders)
+    }else if(!isAdmin(res)){
+        const orders = await Order.find({email : req.user.email}).sort({date:-1})
+        res.json(orders)
+
+    }
+}
+
+export async function updateOrderStatus(){
+    if(!isAdmin(req)){
+        res.json({
+            message : "only admin can update order status"
+        })
+        return;
+
+
+    }
+
+    const orderID = req.params.orderID;
+    const status = req.body.status;
+
+    try{
+        await Order.updateOne(
+            {
+                orderID : orderID
+            },
+            {
+                status : status
+            }
+        )
+        res.json({
+            message : "order status updated successfully"
+        })
+    }catch(err){
+        res.json({
+            message : "failed to update order status"
+        })
+    }
+
+    
+
 }
