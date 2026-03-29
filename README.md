@@ -9,7 +9,7 @@ This platform allows users to browse products, register accounts, and place orde
 User registration and login system
 Browse and view product details
 Product overview page
-Place orders بسهولة
+Place orders 
 Secure authentication with password hashing
 🔑 Admin Features
 Add new products
