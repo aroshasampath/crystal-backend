@@ -4,10 +4,9 @@ import { isAdmin } from "./userController.js";
 
 export async function createOrder(req, res) {
     if (req.user == null) {
-        res.status(401).json({
+        return res.status(401).json({
             message: "you are not authorized to create order"
         });
-        return;
     }
 
     try {
@@ -38,24 +37,21 @@ export async function createOrder(req, res) {
         const itemsInRequest = req.body.items;
 
         if (itemsInRequest == null) {
-            res.status(400).json({
+            return res.status(400).json({
                 message: "items are required"
             });
-            return;
         }
 
         if (!Array.isArray(itemsInRequest)) {
-            res.status(400).json({
+            return res.status(400).json({
                 message: "items must be an array"
             });
-            return;
         }
 
         if (itemsInRequest.length === 0) {
-            res.status(400).json({
+            return res.status(400).json({
                 message: "cart is empty"
             });
-            return;
         }
 
         const itemsToBeAdded = [];
@@ -67,19 +63,17 @@ export async function createOrder(req, res) {
             const product = await Product.findOne({ productID: item.productID });
 
             if (product == null) {
-                res.status(400).json({
+                return res.status(400).json({
                     message: "product not found",
                     productID: item.productID
                 });
-                return;
             }
 
             if (product.stock < item.quantity) {
-                res.status(400).json({
+                return res.status(400).json({
                     message: "product out of stock",
                     productID: item.productID
                 });
-                return;
             }
 
             itemsToBeAdded.push({
@@ -100,66 +94,95 @@ export async function createOrder(req, res) {
             email: user.email,
             address: req.body.address,
             phone: phone,
-            total: total
+            total: total,
+            status: "pending"
         });
 
         const savedOrder = await newOrder.save();
 
-        res.status(201).json({
+        return res.status(201).json({
             message: "order created successfully",
             order: savedOrder
         });
     } catch (err) {
         console.log("create order error:", err);
-        res.status(500).json({
+        return res.status(500).json({
             message: "failed to create order",
             error: err.message
         });
     }
 }
 
-export async function getOrders(req,res){
-    if(isAdmin(res)){
-        const orders = await Order.find().sort({date:-1})
-        res.json(orders)
-    }else if(!isAdmin(res)){
-        const orders = await Order.find({email : req.user.email}).sort({date:-1})
-        res.json(orders)
+export async function getOrders(req, res) {
+    try {
+        if (req.user == null) {
+            return res.status(401).json({
+                message: "you are not authorized to view orders"
+            });
+        }
 
+        if (isAdmin(req)) {
+            const orders = await Order.find().sort({ date: -1 });
+            return res.json(orders);
+        } else {
+            const orders = await Order.find({ email: req.user.email }).sort({ date: -1 });
+            return res.json(orders);
+        }
+    } catch (err) {
+        console.log("get orders error:", err);
+        return res.status(500).json({
+            message: "failed to fetch orders",
+            error: err.message
+        });
     }
 }
 
-export async function updateOrderStatus(){
-    if(!isAdmin(req)){
-        res.json({
-            message : "only admin can update order status"
-        })
-        return;
+export async function updateOrderStatus(req, res) {
+    try {
+        if (!isAdmin(req)) {
+            return res.status(403).json({
+                message: "only admin can update order status"
+            });
+        }
 
+        const orderID = req.params.orderID;
+        const status = req.body.status;
 
+        if (!status) {
+            return res.status(400).json({
+                message: "status is required"
+            });
+        }
+
+        const validStatuses = ["pending", "processing", "delivered", "cancelled"];
+
+        if (!validStatuses.includes(status.toLowerCase())) {
+            return res.status(400).json({
+                message: "invalid status"
+            });
+        }
+
+        const updatedOrder = await Order.findOneAndUpdate(
+            { orderID: orderID },
+            { status: status.toLowerCase() },
+            { new: true }
+        );
+
+        if (!updatedOrder) {
+            return res.status(404).json({
+                message: "order not found"
+            });
+        }
+
+        return res.json({
+            message: "order status updated successfully",
+            order: updatedOrder
+        });
+    } catch (err) {
+        console.log("update order status error:", err);
+        return res.status(500).json({
+            message: "failed to update order status",
+            error: err.message
+        });
     }
-
-    const orderID = req.params.orderID;
-    const status = req.body.status;
-
-    try{
-        await Order.updateOne(
-            {
-                orderID : orderID
-            },
-            {
-                status : status
-            }
-        )
-        res.json({
-            message : "order status updated successfully"
-        })
-    }catch(err){
-        res.json({
-            message : "failed to update order status"
-        })
-    }
-
-    
-
 }
